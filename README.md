@@ -1,4 +1,4 @@
-# **Decentralized Spectrum as a Service Marketplace **
+# Decentralized Spectrum as a Service Marketplace
 
 The **Spectrum Marketplace** is a decentralized platform designed for **Spectrum as a Service (SpaaS)**. It leverages Ethereum-based smart contracts to allow spectrum providers to lease their frequencies and tenants to rent them, ensuring transparent and efficient management of frequency spectrum.
 
