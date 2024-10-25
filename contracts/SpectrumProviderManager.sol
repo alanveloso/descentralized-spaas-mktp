@@ -24,6 +24,18 @@ contract SpectrumProviderManager is Ownable(msg.sender) {
         tokenManager = SpectrumTokenManager(tokenManagerAddress);
     }
 
+
+    // Função para retornar o comprimento do array de provedores para um spectrumId específico
+    function getProviderCount(uint256 spectrumId) external view returns (uint256) {
+        return spectrumProviders[spectrumId].length;
+    }
+
+    // Função para obter um provedor específico por índice para um spectrumId
+    function getProviderByIndex(uint256 spectrumId, uint256 index) external view returns (address) {
+        require(index < spectrumProviders[spectrumId].length, "Index out of bounds");
+        return spectrumProviders[spectrumId][index];
+    }
+
     /**
      * @dev Função para provedores adicionarem tokens ao marketplace e definir o preço por hora (ratePerHour)
      */
