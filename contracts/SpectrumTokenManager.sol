@@ -8,6 +8,13 @@ import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
 contract SpectrumTokenManager is IERC1155Receiver, Ownable(msg.sender), ERC165 {
     SpectrumToken public spectrumToken; // Referência para o contrato SpectrumToken
+    
+    address public providerManager;
+
+    modifier onlyAuthorized() {
+        require(msg.sender == owner() || msg.sender == providerManager, "Not authorized");
+        _;
+    }
 
     // Evento disparado quando os tokens são transferidos para a custódia
     event TokensTransferredToCustody(address indexed provider, uint256 indexed spectrumId, uint256 amount);
@@ -26,8 +33,12 @@ contract SpectrumTokenManager is IERC1155Receiver, Ownable(msg.sender), ERC165 {
         spectrumToken = SpectrumToken(tokenAddress); // Alinhando com o contrato correto
     }
 
+    function setProviderManager(address _providerManager) external onlyOwner {
+        providerManager = _providerManager;
+    }
+
     // Function to confirm receipt of tokens from the provider
-    function receiveTokensFromProvider(address provider, uint256 spectrumId, uint256 amount) external onlyOwner {
+    function receiveTokensFromProvider(address provider, uint256 spectrumId, uint256 amount) external onlyAuthorized {
         require(provider != address(0), "Invalid provider address");
         require(amount > 0, "Amount must be greater than zero");
 
@@ -46,7 +57,7 @@ contract SpectrumTokenManager is IERC1155Receiver, Ownable(msg.sender), ERC165 {
     }
 
     // Função para transferir tokens da custódia para o inquilino durante o aluguel
-    function transferToTenant(address tenant, uint256[] calldata spectrumIds, uint256[] calldata amounts) external onlyOwner {
+    function transferToTenant(address tenant, uint256[] calldata spectrumIds, uint256[] calldata amounts) external onlyAuthorized {
         require(tenant != address(0), "Invalid tenant address");
         require(spectrumIds.length == amounts.length, "Mismatch between spectrumIds and amounts");
 
