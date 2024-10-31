@@ -100,4 +100,23 @@ contract SpectrumProviderManager is Ownable(msg.sender) {
 
         revert("No provider found with sufficient spectrum for this request");
     }
+
+    /**
+     * @dev Atualiza o saldo de um provedor específico após uma alocação de espectro.
+     * @param spectrumId O ID do espectro solicitado.
+     * @param provider O endereço do provedor que forneceu o espectro.
+     * @param allocatedAmount A quantidade de espectro alocada desse provedor.
+     */
+    function updateProviderBalance(
+        address provider,
+        uint256 spectrumId,
+        uint256 allocatedAmount
+    ) external {
+        require(provider != address(0), "Invalid provider address");
+        require(providerTokenBalances[provider][spectrumId] >= allocatedAmount, "Insufficient balance for allocation");
+
+        // Reduz o saldo disponível do provedor para o spectrumId específico
+        providerTokenBalances[provider][spectrumId] -= allocatedAmount;
+    }
+
 }
