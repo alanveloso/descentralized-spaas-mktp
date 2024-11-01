@@ -57,7 +57,7 @@ contract SpectrumTokenManager is IERC1155Receiver, Ownable(msg.sender), ERC165 {
     }
 
     // Função para transferir tokens da custódia para o inquilino durante o aluguel
-    function transferToTenant(address tenant, uint256[] calldata spectrumIds, uint256[] calldata amounts) external onlyAuthorized {
+    function transferToTenant(address tenant, uint256[] calldata spectrumIds, uint256[] calldata amounts) external {
         require(tenant != address(0), "Invalid tenant address");
         require(spectrumIds.length == amounts.length, "Mismatch between spectrumIds and amounts");
 
@@ -66,7 +66,7 @@ contract SpectrumTokenManager is IERC1155Receiver, Ownable(msg.sender), ERC165 {
     }
 
     // Função para devolver tokens do inquilino para a custódia após o aluguel
-    function returnFromTenant(address tenant, uint256[] calldata spectrumIds, uint256[] calldata amounts) external onlyOwner {
+    function returnFromTenant(address tenant, uint256[] calldata spectrumIds, uint256[] calldata amounts) external {
         require(tenant != address(0), "Invalid tenant address");
         require(spectrumIds.length == amounts.length, "Mismatch between spectrumIds and amounts");
 

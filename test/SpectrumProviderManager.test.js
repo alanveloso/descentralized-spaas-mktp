@@ -82,4 +82,20 @@ describe("SpectrumProviderManager", function () {
       "No provider found with sufficient spectrum for this request"
     );
   });
+  
+  it("Should update provider's balance after allocation", async function () {
+    // Provider supplies 100 tokens
+    await providerManager.connect(provider).provideTokens(1, 100, ethers.parseEther("0.01"));
+
+    // Initial balance should be 100
+    let initialBalance = await providerManager.providerTokenBalances(provider.address, 1);
+    expect(initialBalance).to.equal(100);
+
+    // Update balance after allocating 30 tokens
+    await providerManager.updateProviderBalance(provider.address, 1, 30);
+
+    // Balance should now be 70
+    const updatedBalance = await providerManager.providerTokenBalances(provider.address, 1);
+    expect(updatedBalance).to.equal(70);
+  });
 });
