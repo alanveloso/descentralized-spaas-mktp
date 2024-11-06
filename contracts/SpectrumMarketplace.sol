@@ -41,7 +41,7 @@ contract SpectrumMarketplace is Ownable(msg.sender) {
         spectrumToken.setApprovalForAll(address(tokenManager), true);
 
         // O provedor fornece os tokens ao providerManager
-        providerManager.provideTokens(spectrumId, amount, ratePerHour);
+        providerManager.provideTokens(msg.sender, spectrumId, amount, ratePerHour);
 
         emit SpectrumListed(msg.sender, spectrumId, amount, ratePerHour);
     }
