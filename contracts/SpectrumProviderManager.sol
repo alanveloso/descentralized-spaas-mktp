@@ -39,23 +39,22 @@ contract SpectrumProviderManager is Ownable(msg.sender) {
     /**
      * @dev Função para provedores adicionarem tokens ao marketplace e definir o preço por hora (ratePerHour)
      */
-    function provideTokens(uint256 spectrumId, uint256 amount, uint256 ratePerHour) external {
+    function provideTokens(address provider, uint256 spectrumId, uint256 amount, uint256 ratePerHour) external {
         require(amount > 0, "Amount must be greater than zero");
         require(ratePerHour > 0, "Rate per hour must be greater than zero");
 
-        // Atualizar o saldo de tokens do provedor para esse spectrumId
-        providerTokenBalances[msg.sender][spectrumId] += amount;
-
-        // Registrar a taxa de aluguel por hora para esse provedor e spectrumId
-        providerRates[msg.sender][spectrumId] = ratePerHour;
+        // Atualizar o saldo e a taxa para esse provider
+        providerTokenBalances[provider][spectrumId] += amount;
+        providerRates[provider][spectrumId] = ratePerHour;
 
         // Adicionar o provedor à lista ordenada por taxa para esse spectrumId
-        _addProvider(spectrumId, msg.sender, ratePerHour);
+        _addProvider(spectrumId, provider, ratePerHour);
 
-        // Transferir os tokens para a custódia no SpectrumTokenManager
-        tokenManager.receiveTokensFromProvider(msg.sender, spectrumId, amount);
+        // Transferir tokens para o SpectrumTokenManager em nome do provider
+        tokenManager.receiveTokensFromProvider(provider, spectrumId, amount);
 
-        emit SpectrumProvided(msg.sender, spectrumId, amount, ratePerHour);
+
+        emit SpectrumProvided(provider, spectrumId, amount, ratePerHour);
     }
 
     /**
