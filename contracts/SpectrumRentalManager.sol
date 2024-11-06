@@ -41,7 +41,7 @@ contract SpectrumRentalManager is Ownable(msg.sender) {
         return activeRentals[tenant].spectrumAmounts[spectrumId];
     }
 
-    function requestSpectrum(address tenant, uint256[] calldata spectrumIds, uint256[] calldata amounts, uint256 balance) external onlyOwner {
+    function requestSpectrum(address tenant, uint256[] calldata spectrumIds, uint256[] calldata amounts, uint256 balance) external {
         require(spectrumIds.length == amounts.length, "Spectrum IDs and amounts must match");
         require(spectrumIds.length > 0, "Must request at least one spectrum");
 
