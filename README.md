@@ -1,15 +1,18 @@
-# **Decentralized Spectrum as a Service Marketplace **
+# Decentralized Spectrum as a Service Marketplace
 
-The **Spectrum Marketplace** is a decentralized platform designed for **Spectrum as a Service (SpaaS)**. It leverages Ethereum-based smart contracts to allow spectrum providers to lease their frequencies and tenants to rent them, ensuring transparent and efficient management of frequency spectrum.
+The **Spectrum Marketplace** is a decentralized platform designed for **Spectrum as a Service (SpaaS)**. This Ethereum-based system enables spectrum providers to lease their frequency bands and tenants to rent them, ensuring transparent, efficient, and decentralized management of frequency spectrum.
 
 ## **Project Overview**
 
-This project implements a marketplace for providing and renting spectrum as a service. Spectrum providers can offer their frequency bands for rent, and tenants can lease them for specific periods using Ethereum-based tokens. The system is decentralized, ensuring transparency and eliminating the need for intermediaries.
+This project implements a decentralized marketplace for leasing spectrum. Spectrum providers can list their frequency bands for rent, and tenants can lease them for specific periods using Ethereum-based tokens. This approach removes intermediaries and provides transparency, verifiability, and security in the leasing process.
 
 ### **Key System Components**
 
 1. **SpectrumToken**: An ERC1155 token representing different frequency bands available for rent.
-2. **SpectrumTokenManager**: Handles the custody and transfer of spectrum tokens between providers, tenants, and the marketplace.
+2. **SpectrumTokenManager**: Manages the custody and transfer of spectrum tokens between providers, tenants, and the marketplace.
+3. **SpectrumProviderManager**: Allows providers to list spectrum bands, set rates, and manage the availability of their spectrum.
+4. **SpectrumRentalManager**: Handles rental requests, returns, and extensions, enabling tenants to rent, return, or expand their rented spectrum.
+5. **SpectrumMarketplace**: The main marketplace contract that acts as an intermediary between providers and tenants, managing listings, rentals, returns, and extensions of spectrum leases.
 
 ## **Installation**
 
@@ -71,10 +74,70 @@ The `SpectrumTokenManager` handles the custody and management of spectrum tokens
 
 #### Key Functions:
 
-- `transferFromProvider`: Transfers spectrum tokens from a provider to the marketplace's custody.
+- `receiveTokensFromProvider`: Transfers spectrum tokens from a provider to the marketplace's custody.
 - `returnToProvider`: Returns tokens from the marketplace to the provider after a rental period.
 - `transferToTenant`: Transfers spectrum tokens from the marketplace to a tenant for rental.
 - `returnFromTenant`: Returns tokens from the tenant to the marketplace after the rental ends.
+
+### **3. SpectrumProviderManager**
+
+The `SpectrumProviderManager` contract enables spectrum providers to list their available spectrum, set rental rates, and specify the amount available for lease. It ensures providers have tokens in custody before listing them on the marketplace and maintains an ordered list of providers based on the rental rates.
+
+#### Key Functions:
+
+- `provideTokens`: Allows providers to list spectrum tokens with a specified amount and rental rate.
+- `findBestProvider`: Finds the most cost-effective provider with sufficient availability for a specific spectrum rental request.
+- `updateProviderBalance`: Updates the balance of tokens available for rent for each provider.
+
+### **4. SpectrumRentalManager**
+
+The `SpectrumRentalManager` handles the rental process, allowing tenants to request spectrum, return it, and expand their rentals if needed. It keeps track of active rentals, including the rented spectrum amount, rental duration, and tenant information.
+
+#### Key Functions:
+
+- `requestSpectrum`: Initiates a spectrum rental request, verifies availability, and transfers tokens to the tenant.
+- `returnSpectrum`: Handles the return process, updating rental status and refunding the provider.
+- `expandRental`: Allows a tenant to extend their rental period or increase the rented amount if additional tokens are available.
+
+### **5. SpectrumMarketplace**
+
+The `SpectrumMarketplace` contract is the primary interface for interacting with the system. It allows tenants to rent and return spectrum and enables providers to list their spectrum for rent. The marketplace manages the flow between the provider, tenant, and token managers.
+
+#### Key Functions:
+
+- `listSpectrum`: Allows providers to list spectrum with specified parameters.
+- `rentSpectrum`: Enables tenants to rent spectrum listed by providers.
+- `returnSpectrum`: Facilitates the return of rented spectrum.
+- `expandRental`: Allows tenants to expand an ongoing rental by adding more tokens.
+
+## **Testing Coverage**
+
+The following tests have been implemented:
+
+1. **Provider Spectrum Listing**:
+   - Providers can list spectrum with specified rates.
+   - Listing fails if the amount or rental rate is zero.
+   
+2. **Tenant Spectrum Renting**:
+   - Tenants can successfully rent spectrum.
+   - Renting fails if the required spectrum is unavailable.
+   - The tenant’s balance is debited correctly after renting.
+   
+3. **Returning Spectrum**:
+   - Tenants can return the full or partial rented spectrum.
+   - Checks that rentals are marked inactive upon full return.
+   - Ensures spectrum tokens are correctly returned to the marketplace.
+   
+4. **Expanding Rentals**:
+   - Tenants can expand their rental if additional spectrum is available.
+   - Expansion fails if the additional spectrum requested exceeds availability.
+
+5. **Event Emissions**:
+   - Ensures that events (`SpectrumListed`, `SpectrumRented`, `SpectrumReturned`, `RentalExpanded`) are emitted correctly for each action, providing transparency and traceability.
+
+6. **Edge Cases and Exception Handling**:
+   - Attempts to rent or list spectrum without required permissions.
+   - Validations for mismatches in spectrum IDs and amounts during rentals.
 
 ## **License**
 
