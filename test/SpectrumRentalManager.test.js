@@ -36,7 +36,7 @@ describe("SpectrumRentalManager", function () {
 
 
     // Supply tokens from provider to provider manager
-    await providerManager.connect(provider).provideTokens(1, 50, ethers.parseEther("0.01"));
+    await providerManager.connect(provider).provideTokens(provider, 1, 50, ethers.parseEther("0.01"));
 
     // Create an active rental for the tenant
     const initialBalance = ethers.parseEther("1.0");
