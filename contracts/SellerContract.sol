@@ -6,7 +6,7 @@
     import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
     import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 
-    contract TokenSaleContract is IERC1155Receiver, Ownable(msg.sender), ERC165 {
+    contract SellerContract is IERC1155Receiver, Ownable(msg.sender), ERC165 {
         SpectrumToken public spectrumToken;
         ERC1155 public tokenContract;
 
@@ -17,9 +17,8 @@
 
         mapping(uint256 => TokenSale) public tokenSales; // spectrumId => detalhes da venda
 
-        event TokensListed(uint256 indexed spectrumId, uint256 pricePerToken, uint256 availableTokens);
+        event TokensAnnounced(uint256 indexed spectrumId, uint256 pricePerToken, uint256 availableTokens);
         event TokensPurchased(address indexed buyer, uint256 indexed spectrumId, uint256 amount, uint256 totalPrice);
-        event SaleUpdated(uint256 indexed spectrumId, uint256 newPrice, uint256 newAvailableTokens);
         event SaleCancelled(uint256 indexed spectrumId, uint256 remainingTokens);
 
         constructor(address _spectrumToken) {
@@ -32,7 +31,7 @@
          * @param pricePerToken Preço por unidade do token.
          * @param amount Quantidade de tokens a serem listados.
          */
-        function listTokens(uint256 spectrumId, uint256 pricePerToken, uint256 amount) external onlyOwner {
+        function configureSale(uint256 spectrumId, uint256 pricePerToken, uint256 amount) external onlyOwner {
             require(pricePerToken > 0, "Price per token must be greater than zero");
             require(amount > 0, "Amount must be greater than zero");
 
@@ -44,7 +43,7 @@
             sale.pricePerToken = pricePerToken;
             sale.availableTokens += amount;
 
-            emit TokensListed(spectrumId, pricePerToken, sale.availableTokens);
+            emit TokensAnnounced(spectrumId, pricePerToken, sale.availableTokens);
         }
 
         /**
@@ -61,11 +60,11 @@
             uint256 totalPrice = amount * sale.pricePerToken;
             require(msg.value >= totalPrice, "Insufficient payment");
 
-            // Transferir os tokens para o comprador
-            spectrumToken.safeTransferFrom(address(this), msg.sender, spectrumId, amount, "");
-
             // Atualizar os tokens disponíveis
             sale.availableTokens -= amount;
+
+            // Transferir os tokens para o comprador
+            spectrumToken.safeTransferFrom(address(this), msg.sender, spectrumId, amount, "");
 
             // Reembolsar o valor excedente, se houver
             if (msg.value > totalPrice) {
@@ -73,26 +72,6 @@
             }
 
             emit TokensPurchased(msg.sender, spectrumId, amount, totalPrice);
-        }
-
-        /**
-         * @dev Atualiza os detalhes da venda de um token específico.
-         * @param spectrumId ID do token cuja venda será atualizada.
-         * @param newPrice Novo preço por unidade do token.
-         * @param additionalTokens Quantidade adicional de tokens a serem listados (opcional).
-         */
-        function updateSale(uint256 spectrumId, uint256 newPrice, uint256 additionalTokens) external onlyOwner {
-            require(newPrice > 0, "Price must be greater than zero");
-
-            TokenSale storage sale = tokenSales[spectrumId];
-            if (additionalTokens > 0) {
-                spectrumToken.safeTransferFrom(msg.sender, address(this), spectrumId, additionalTokens, "");
-                sale.availableTokens += additionalTokens;
-            }
-
-            sale.pricePerToken = newPrice;
-
-            emit SaleUpdated(spectrumId, newPrice, sale.availableTokens);
         }
 
         /**
