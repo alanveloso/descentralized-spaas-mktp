@@ -18,26 +18,37 @@ contract TokenAuction is IERC1155Receiver, Ownable(msg.sender), ERC165 {
     mapping(address => uint256) public bids; // Rastreamento de lances dos compradores
 
     event AuctionCreated(uint256 spectrumId, uint256 amount, uint256 minBid, uint256 endTime);
+    event TokensDeposited(uint256 spectrumId, uint256 amount);
     event BidPlaced(address indexed bidder, uint256 bidAmount);
     event AuctionFinalized(address winner, uint256 winningBid);
     event BidWithdrawn(address indexed bidder, uint256 amount);
 
-    constructor(address _spectrumToken, uint256 _spectrumId, uint256 _amount, uint256 _minBid, uint256 _duration) {
+    constructor(address _spectrumToken) {
+        spectrumToken = SpectrumToken(_spectrumToken);
+    }
+
+    /**
+     * @dev Configura o leilão com os detalhes e transfere os tokens para o contrato.
+     * @param _spectrumId ID do token a ser leiloado.
+     * @param _amount Quantidade de tokens a serem leiloados.
+     * @param _minBid Lance mínimo para o leilão.
+     * @param _duration Duração do leilão em segundos.
+     */
+    function configureAuction(uint256 _spectrumId, uint256 _amount, uint256 _minBid, uint256 _duration) external onlyOwner {
         require(_amount > 0, "Amount must be greater than zero");
         require(_minBid > 0, "Minimum bid must be greater than zero");
         require(_duration > 0, "Duration must be greater than zero");
 
-        spectrumToken = SpectrumToken(_spectrumToken);
         spectrumId = _spectrumId;
         amount = _amount;
         minBid = _minBid;
         endTime = block.timestamp + _duration;
         finalized = false;
 
-        // Transferir tokens para o contrato
         spectrumToken.safeTransferFrom(msg.sender, address(this), spectrumId, amount, "");
 
         emit AuctionCreated(spectrumId, amount, minBid, endTime);
+        emit TokensDeposited(spectrumId, amount);
     }
 
     /**
@@ -120,7 +131,7 @@ contract TokenAuction is IERC1155Receiver, Ownable(msg.sender), ERC165 {
         return this.onERC1155BatchReceived.selector;
     }
 
-        // Função que verifica suporte à interface
+    // Função que verifica suporte à interface
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, IERC165) returns (bool) {
         return interfaceId == type(IERC1155Receiver).interfaceId || super.supportsInterface(interfaceId);
     }
