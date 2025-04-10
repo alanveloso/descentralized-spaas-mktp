@@ -1,4 +1,5 @@
 const { expect } = require("chai");
+const cons = require("consolidate");
 const { ethers } = require("hardhat");
 
 describe("SpectrumMarketplace", function () {
@@ -23,9 +24,9 @@ describe("SpectrumMarketplace", function () {
     const SpectrumRentalManager = await ethers.getContractFactory("SpectrumRentalManager");
     rentalManager = await SpectrumRentalManager.deploy(providerManager.target, spectrumTokenManager.target);
 
-    // Deploy SpectrumMarketplace
-    const SpectrumMarketplace = await ethers.getContractFactory("SpectrumMarketplace");
-    marketplace = await SpectrumMarketplace.deploy(
+    // Deploy spectrumMarketplace
+    const spectrumMarketplace = await ethers.getContractFactory("SpectrumMarketplace");
+    marketplace = await spectrumMarketplace.deploy(
       spectrumToken.target,
       spectrumTokenManager.target,
       providerManager.target,
@@ -37,13 +38,15 @@ describe("SpectrumMarketplace", function () {
 
     // Mint tokens to the provider and approve the SpectrumTokenManager
     await spectrumToken.connect(owner).mint(provider.address, 1, 100);
-    await spectrumToken.connect(provider).setApprovalForAll(spectrumTokenManager.target, true);
+    // await spectrumToken.connect(provider).setApprovalForAll(spectrumTokenManager.target, true);
+    await spectrumToken.connect(provider).setApprovalForAll(marketplace.target, true);
   });
 
   it("Should allow a provider to list spectrum", async function () {
     await marketplace.connect(provider).listSpectrum(1, 50, ethers.parseEther("0.01"));
     const providerBalance = await providerManager.providerTokenBalances(provider.address, 1);
     expect(providerBalance).to.equal(50);
+
   });
 
   it("Should fail to list spectrum with zero amount", async function () {

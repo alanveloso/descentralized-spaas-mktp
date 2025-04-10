@@ -50,10 +50,6 @@ contract SpectrumProviderManager is Ownable(msg.sender) {
         // Adicionar o provedor à lista ordenada por taxa para esse spectrumId
         _addProvider(spectrumId, provider, ratePerHour);
 
-        // Transferir tokens para o SpectrumTokenManager em nome do provider
-        tokenManager.receiveTokensFromProvider(provider, spectrumId, amount);
-
-
         emit SpectrumProvided(provider, spectrumId, amount, ratePerHour);
     }
 

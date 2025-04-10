@@ -27,24 +27,28 @@ describe("SpectrumTokenManager", function () {
   it("Deve transferir tokens do provedor para a custódia", async function () {
     // Provedor aprova o SpectrumTokenManager para transferir tokens
     await spectrumToken.connect(provider).setApprovalForAll(spectrumTokenManager.target, true);
-
+    
     // Executar a transferência
-    await expect(spectrumTokenManager.connect(owner).receiveTokensFromProvider(provider.address, spectrumId, amount))
+    await expect(spectrumTokenManager.connect(provider).receiveTokensFromProvider(provider.address, spectrumId, amount))
       .to.emit(spectrumTokenManager, "TokensTransferredToCustody")
       .withArgs(provider.address, spectrumId, amount);
+
+    // Verificar saldo do provedor
+    providerBalance = await spectrumToken.balanceOf(provider.address, spectrumId);
+    expect(providerBalance).to.equal(0);
 
     // Verificar saldo de tokens
     const contractBalance = await spectrumToken.balanceOf(spectrumTokenManager.target, spectrumId);
     expect(contractBalance).to.equal(amount);
 
-    const providerBalance = await spectrumToken.balanceOf(provider.address, spectrumId);
+    providerBalance = await spectrumToken.balanceOf(provider.address, spectrumId);
     expect(providerBalance).to.equal(0);
   });
 
   it("Deve devolver tokens da custódia para o provedor", async function () {
     // Simular que os tokens já estão na custódia
     await spectrumToken.connect(provider).setApprovalForAll(spectrumTokenManager.target, true);
-    await spectrumTokenManager.connect(owner).receiveTokensFromProvider(provider.address, spectrumId, amount);
+    await spectrumTokenManager.connect(provider).receiveTokensFromProvider(provider.address, spectrumId, amount);
 
     // Executar a devolução para o provedor
     await expect(spectrumTokenManager.connect(owner).returnToProvider(provider.address, spectrumId, amount))
@@ -62,7 +66,7 @@ describe("SpectrumTokenManager", function () {
   it("Deve transferir tokens da custódia para o locatário (tenant)", async function () {
     // Simular que os tokens já estão na custódia
     await spectrumToken.connect(provider).setApprovalForAll(spectrumTokenManager.target, true);
-    await spectrumTokenManager.connect(owner).receiveTokensFromProvider(provider.address, spectrumId, amount);
+    await spectrumTokenManager.connect(provider).receiveTokensFromProvider(provider.address, spectrumId, amount);
 
     // Transferir para o locatário
     await expect(spectrumTokenManager.connect(owner).transferToTenant(tenant.address, [spectrumId], [amount]))
@@ -80,7 +84,7 @@ describe("SpectrumTokenManager", function () {
   it("Deve retornar tokens do locatário para a custódia", async function () {
     // Simular que os tokens estão com o locatário
     await spectrumToken.connect(provider).setApprovalForAll(spectrumTokenManager.target, true);
-    await spectrumTokenManager.connect(owner).receiveTokensFromProvider(provider.address, spectrumId, amount);
+    await spectrumTokenManager.connect(provider).receiveTokensFromProvider(provider.address, spectrumId, amount);
     await spectrumTokenManager.connect(owner).transferToTenant(tenant.address, [spectrumId], [amount]);
 
     // Locatário aprova o contrato para retornar os tokens

@@ -38,12 +38,17 @@ contract SpectrumTokenManager is IERC1155Receiver, Ownable(msg.sender), ERC165 {
     }
 
     // Function to confirm receipt of tokens from the provider
-    function receiveTokensFromProvider(address provider, uint256 spectrumId, uint256 amount) external onlyAuthorized {
+    function receiveTokensFromProvider(address provider, uint256 spectrumId, uint256 amount) external {
         require(provider != address(0), "Invalid provider address");
         require(amount > 0, "Amount must be greater than zero");
 
-        // O provedor chama a função transferToCustody no SpectrumToken para iniciar a transferência
-        spectrumToken.safeTransferFrom(provider, address(this), spectrumId, amount, ""); // A transferência ocorre aqui
+        require(
+            spectrumToken.isApprovedForAll(msg.sender, address(this)),
+            "TokenManager not approved"
+        );
+
+        // Transfere tokens do provedor para o TokenManager
+        spectrumToken.safeTransferFrom(msg.sender, address(this), spectrumId, amount, "");
         emit TokensTransferredToCustody(provider, spectrumId, amount);
     }
 

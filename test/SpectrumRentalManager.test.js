@@ -34,8 +34,9 @@ describe("SpectrumRentalManager", function () {
     await spectrumToken.connect(owner).mint(tenant.address, 1, 50); // Adiciona tokens ao tenant para devolução
     await spectrumToken.connect(tenant).setApprovalForAll(spectrumTokenManager.target, true); // Aprovação necessária para devolução
 
-
-    // Supply tokens from provider to provider manager
+    // Transfer tokens from provider to the SpectrumTokenManager
+    await spectrumToken.connect(provider).setApprovalForAll(spectrumTokenManager.target, true);
+    await spectrumTokenManager.connect(provider).receiveTokensFromProvider(provider.address, 1, 50);
     await providerManager.connect(provider).provideTokens(provider, 1, 50, ethers.parseEther("0.01"));
 
     // Create an active rental for the tenant

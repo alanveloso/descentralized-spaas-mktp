@@ -7,7 +7,7 @@ import "./SpectrumTokenManager.sol";
 import "./SpectrumProviderManager.sol";
 import "./SpectrumRentalManager.sol";
 
-contract SpectrumMarketplace is Ownable(msg.sender) {
+contract SpectrumMarketplace is IERC1155Receiver, ERC165, Ownable(msg.sender) {
     SpectrumToken public spectrumToken;
     SpectrumTokenManager public tokenManager;
     SpectrumProviderManager public providerManager;
@@ -37,10 +37,29 @@ contract SpectrumMarketplace is Ownable(msg.sender) {
         require(amount > 0, "Amount must be greater than zero");
         require(ratePerHour > 0, "Rate per hour must be greater than zero");
 
-        // O provedor aprova o tokenManager para gerenciar seus tokens
-        spectrumToken.setApprovalForAll(address(tokenManager), true);
+        // Verifica se o provedor aprovou o marketplace para transferir tokens em seu nome.
+        require(
+            spectrumToken.isApprovedForAll(msg.sender, address(this)),
+            "Marketplace not approved"
+        );
+
+        // 1. Transfere os tokens do provedor para este contrato.
+        spectrumToken.safeTransferFrom(msg.sender, address(this), spectrumId, amount, "");
+
+        // 2. Aprova o contrato tokenManager para movimentar
+        if (!spectrumToken.isApprovedForAll(address(this), address(tokenManager))) {
+            spectrumToken.setApprovalForAll(address(tokenManager), true);
+        }
+
+        require(
+            spectrumToken.isApprovedForAll(address(this), address(tokenManager)),
+            "TokenManager not approved"
+        );
 
         // O provedor fornece os tokens ao providerManager
+        tokenManager.receiveTokensFromProvider(msg.sender, spectrumId, amount);
+
+        // O provedor é armazenado no providerManager
         providerManager.provideTokens(msg.sender, spectrumId, amount, ratePerHour);
 
         emit SpectrumListed(msg.sender, spectrumId, amount, ratePerHour);
@@ -78,5 +97,33 @@ contract SpectrumMarketplace is Ownable(msg.sender) {
         rentalManager.expandRental(msg.sender, spectrumIds, amounts);
 
         emit RentalExpanded(msg.sender, spectrumIds, amounts);
+    }
+
+
+        // Função para receber transferências de tokens ERC1155
+    function onERC1155Received(
+        address /* operator */,
+        address /* from */,
+        uint256 /* id */,
+        uint256 /* value */,
+        bytes calldata /* data */
+    ) external pure override returns (bytes4) {
+        return this.onERC1155Received.selector;
+    }
+
+    // Função para receber transferências em lote de tokens ERC1155
+    function onERC1155BatchReceived(
+        address /* operator */,
+        address /* from */,
+        uint256[] calldata /* ids */,
+        uint256[] calldata /* values */,
+        bytes calldata /* data */
+    ) external pure override returns (bytes4) {
+        return this.onERC1155BatchReceived.selector;
+    }
+
+    // Função que verifica suporte à interface
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, IERC165) returns (bool) {
+        return interfaceId == type(IERC1155Receiver).interfaceId || super.supportsInterface(interfaceId);
     }
 }
