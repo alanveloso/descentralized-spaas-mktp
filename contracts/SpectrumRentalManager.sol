@@ -24,25 +24,55 @@ contract SpectrumRentalManager is Ownable(msg.sender) {
 
     mapping(address => SpectrumRental) public activeRentals;
 
-    event SpectrumRented(address indexed tenant, uint256[] spectrumIds, uint256[] amounts, uint256 timeAllocated);
-    event SpectrumReturned(address indexed tenant, uint256[] spectrumIds, uint256[] amounts, uint256 timeUsed, uint256 refund);
+    event SpectrumRented(
+        address indexed tenant,
+        uint256[] spectrumIds,
+        uint256[] amounts,
+        uint256 timeAllocated
+    );
+    event SpectrumReturned(
+        address indexed tenant,
+        uint256[] spectrumIds,
+        uint256[] amounts,
+        uint256 timeUsed,
+        uint256 refund
+    );
 
     constructor(address providerManagerAddress, address tokenManagerAddress) {
         providerManager = SpectrumProviderManager(providerManagerAddress);
         tokenManager = SpectrumTokenManager(tokenManagerAddress);
     }
 
-    function getRentedSpectrumIdByIndex(address tenant, uint256 index) external view returns (uint256) {
-        require(index < activeRentals[tenant].rentedSpectrumIds.length, "Index out of bounds");
+    function getRentedSpectrumIdByIndex(address tenant, uint256 index)
+        external
+        view
+        returns (uint256)
+    {
+        require(
+            index < activeRentals[tenant].rentedSpectrumIds.length,
+            "Index out of bounds"
+        );
         return activeRentals[tenant].rentedSpectrumIds[index];
     }
 
-    function getSpectrumAmount(address tenant, uint256 spectrumId) external view returns (uint256) {
+    function getSpectrumAmount(address tenant, uint256 spectrumId)
+        external
+        view
+        returns (uint256)
+    {
         return activeRentals[tenant].spectrumAmounts[spectrumId];
     }
 
-    function requestSpectrum(address tenant, uint256[] calldata spectrumIds, uint256[] calldata amounts, uint256 balance) external {
-        require(spectrumIds.length == amounts.length, "Spectrum IDs and amounts must match");
+    function requestSpectrum(
+        address tenant,
+        uint256[] calldata spectrumIds,
+        uint256[] calldata amounts,
+        uint256 balance
+    ) external {
+        require(
+            spectrumIds.length == amounts.length,
+            "Spectrum IDs and amounts must match"
+        );
         require(spectrumIds.length > 0, "Must request at least one spectrum");
 
         SpectrumRental storage rental = activeRentals[tenant];
@@ -61,23 +91,31 @@ contract SpectrumRentalManager is Ownable(msg.sender) {
             }
 
             while (amountAllocated < amountNeeded) {
-                address provider = providerManager.findBestProvider(spectrumId, amountNeeded - amountAllocated);
-                uint256 providerRate = providerManager.providerRates(provider, spectrumId);
-                uint256 allocatableAmount = providerManager.providerTokenBalances(provider, spectrumId);
+                address provider = providerManager.findBestProvider(
+                    spectrumId,
+                    amountNeeded - amountAllocated
+                );
+                uint256 providerRate = providerManager.providerRates(
+                    provider,
+                    spectrumId
+                );
+                uint256 allocatableAmount = providerManager
+                    .providerTokenBalances(provider, spectrumId);
 
-                uint256 allocation = allocatableAmount > amountNeeded - amountAllocated
-                    ? amountNeeded - amountAllocated
-                    : allocatableAmount;
+                uint256 allocation = allocatableAmount > (amountNeeded - amountAllocated) ? (amountNeeded - amountAllocated): allocatableAmount;
 
-                providerManager.updateProviderBalance(provider, spectrumId, allocation);
+                providerManager.updateProviderBalance(
+                    provider,
+                    spectrumId,
+                    allocation
+                );
                 rental.spectrumAmounts[spectrumId] += allocation;
                 rental.providersForSpectrum[spectrumId].push(provider);
 
-                totalRatePerSecond += (providerRate * allocation) / 3600;
+                totalRatePerSecond += (providerRate * allocation);
                 amountAllocated += allocation;
             }
         }
-
 
         uint256 totalRentalTime = balance / totalRatePerSecond;
         rental.tenant = tenant;
@@ -94,8 +132,11 @@ contract SpectrumRentalManager is Ownable(msg.sender) {
         emit SpectrumRented(tenant, spectrumIds, amounts, totalRentalTime);
     }
 
-
-    function returnSpectrum(address tenant, uint256[] calldata spectrumIds, uint256[] calldata amounts) external {
+    function returnSpectrum(
+        address tenant,
+        uint256[] calldata spectrumIds,
+        uint256[] calldata amounts
+    ) external {
         SpectrumRental storage rental = activeRentals[tenant];
         require(rental.isActive, "No active rental");
 
@@ -105,23 +146,36 @@ contract SpectrumRentalManager is Ownable(msg.sender) {
         for (uint256 i = 0; i < spectrumIds.length; i++) {
             uint256 spectrumId = spectrumIds[i];
             uint256 amountToReturn = amounts[i];
-            require(rental.spectrumAmounts[spectrumId] >= amountToReturn, "Return amount exceeds rented");
+            require(
+                rental.spectrumAmounts[spectrumId] >= amountToReturn,
+                "Return amount exceeds rented"
+            );
 
             // Obter provedores do spectrumId
-            address[] memory providers = rental.providersForSpectrum[spectrumId];
-            
+            address[] memory providers = rental.providersForSpectrum[
+                spectrumId
+            ];
+
             uint256 remainingAmount = amountToReturn;
 
             // Caminhar na lista de provedores de trás para frente
-            for (uint256 j = providers.length; j > 0 && remainingAmount > 0; j--) {
-                address provider = providers[j - 1];  // Ajuste para índices zero-based
-                uint256 providerRate = providerManager.providerRates(provider, spectrumId);
+            for (
+                uint256 j = providers.length;
+                j > 0 && remainingAmount > 0;
+                j--
+            ) {
+                address provider = providers[j - 1]; // Ajuste para índices zero-based
+                uint256 providerRate = providerManager.providerRates(
+                    provider,
+                    spectrumId
+                );
 
-                uint256 providerAmount = remainingAmount < rental.spectrumAmounts[spectrumId]
+                uint256 providerAmount = remainingAmount <
+                    rental.spectrumAmounts[spectrumId]
                     ? remainingAmount
                     : rental.spectrumAmounts[spectrumId];
 
-                ratePerSecondReduction += (providerRate * providerAmount) / 3600;
+                ratePerSecondReduction += (providerRate * providerAmount);
 
                 remainingAmount -= providerAmount;
             }
@@ -143,7 +197,6 @@ contract SpectrumRentalManager is Ownable(msg.sender) {
         emit SpectrumReturned(tenant, spectrumIds, amounts, timeUsed, 0);
     }
 
-
     function expandRental(
         address tenant,
         uint256[] calldata spectrumIds,
@@ -161,11 +214,19 @@ contract SpectrumRentalManager is Ownable(msg.sender) {
 
             while (amountAllocated < additionalAmountNeeded) {
                 // Encontrar o provedor mais barato disponível
-                address provider = providerManager.findBestProvider(spectrumId, additionalAmountNeeded - amountAllocated);
-                uint256 providerRate = providerManager.providerRates(provider, spectrumId);
+                address provider = providerManager.findBestProvider(
+                    spectrumId,
+                    additionalAmountNeeded - amountAllocated
+                );
+                uint256 providerRate = providerManager.providerRates(
+                    provider,
+                    spectrumId
+                );
 
-                uint256 amountFromProvider = additionalAmountNeeded - amountAllocated;
-                uint256 costPerSecond = (providerRate * amountFromProvider) / 3600;
+                uint256 amountFromProvider = additionalAmountNeeded -
+                    amountAllocated;
+                uint256 costPerSecond = (providerRate * amountFromProvider) /
+                    3600;
 
                 // Atualizar alocação de espectro e custo do aluguel
                 rental.spectrumAmounts[spectrumId] += amountFromProvider;
@@ -183,7 +244,6 @@ contract SpectrumRentalManager is Ownable(msg.sender) {
         emit SpectrumRented(tenant, spectrumIds, amounts, rental.timeAllocated);
     }
 
-
     function _recalculateRentalTime(address tenant) internal {
         SpectrumRental storage rental = activeRentals[tenant];
         require(rental.isActive, "No active rental");
@@ -197,7 +257,9 @@ contract SpectrumRentalManager is Ownable(msg.sender) {
 
         uint256 remainingTime = address(this).balance / rental.ratePerSecond;
         rental.endTime = block.timestamp + remainingTime;
-        rental.timeAllocated = (block.timestamp - rental.startTime) + remainingTime;
+        rental.timeAllocated =
+            (block.timestamp - rental.startTime) +
+            remainingTime;
     }
 
     function _updateRentalBalance(address tenant) internal {

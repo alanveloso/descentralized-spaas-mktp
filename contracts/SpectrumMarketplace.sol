@@ -81,14 +81,34 @@ contract SpectrumMarketplace is IERC1155Receiver, ERC165, Ownable(msg.sender) {
         emit SpectrumRented(msg.sender, spectrumIds, amounts, balance);
     }
 
-    /**
-     * @dev Função para devolução do espectro.
-     */
-    function returnSpectrum(uint256[] calldata spectrumIds, uint256[] calldata amounts) external {
-        rentalManager.returnSpectrum(msg.sender, spectrumIds, amounts);
+/**
+ * @dev Função para devolução do espectro.
+ */
+function returnSpectrum(uint256[] calldata spectrumIds, uint256[] calldata amounts) external {
 
-        emit SpectrumReturned(msg.sender, spectrumIds, amounts);
+    // Verifica se o provedor aprovou o marketplace para transferir tokens em seu nome.
+    require(
+        spectrumToken.isApprovedForAll(msg.sender, address(this)),
+        "Marketplace not approved"
+    );
+
+    // 1. Transfere os tokens do provedor para este contrato (Marketplace).
+    // Aqui, você transfere os tokens de volta para o Marketplace
+    for (uint256 i = 0; i < spectrumIds.length; i++) {
+        uint256 spectrumId = spectrumIds[i];
+        uint256 amount = amounts[i];
+
+        // Realiza a transferência de tokens do provedor para o contrato Marketplace
+        spectrumToken.safeTransferFrom(msg.sender, address(this), spectrumId, amount, "");
     }
+
+    // O contrato principal (Marketplace) chama o rentalManager para devolver o espectro.
+    rentalManager.returnSpectrum(msg.sender, spectrumIds, amounts);
+
+    // 3. Emite um evento para registrar a devolução
+    emit SpectrumReturned(msg.sender, spectrumIds, amounts);
+}
+
 
     /**
      * @dev Expansão do aluguel atual com mais espectro.

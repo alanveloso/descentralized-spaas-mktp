@@ -1,17 +1,34 @@
+# Dependências do Node.js
 node_modules
 .env
 
-# Hardhat files
-/cache
-/artifacts
+# Arquivos do Remix
+/remix.lock
+/remix.config.js
 
-# TypeChain files
-/typechain
-/typechain-types
+# Arquivos gerados pelo Remix
+/remix-build
+/.remix
 
-# solidity-coverage files
+# Pastas de deploy e dependências (comuns em projetos Remix)
+.deploys
+.deps
+
+# Hardhat files (caso ainda esteja utilizando)
+# /cache
+# /artifacts
+
+# TypeChain files (caso esteja usando)
+# /typechain
+# /typechain-types
+
+# Solidity-coverage files
 /coverage
 /coverage.json
 
 # Hardhat Ignition default folder for deployments against a local node
-ignition/deployments/chain-31337
+# ignition/deployments/chain-31337
+
+# Ignorar artefatos de compilação de contratos Solidity
+/contracts/artifacts
+
