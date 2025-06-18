@@ -1,0 +1,37 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "SpectrumConstants",
+  "sourceName": "contracts/SpectrumConstants.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "SPECTRUM_700MHZ",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "SPECTRUM_800MHZ",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x609a610038600b82828239805160001a607314602b57634e487b7160e01b600052600060045260246000fd5b30600052607381538281f3fe7300000000000000000000000000000000000000003014608060405260043610603d5760003560e01c80633612510b146042578063671da2fc14605c575b600080fd5b604a6102bc81565b60405190815260200160405180910390f35b604a6103208156fea2646970667358221220831ad1546e8fde9ea48ba13702dd99dbd1f5c2087898989158b2166c59762e9d64736f6c63430008140033",
+  "deployedBytecode": "0x7300000000000000000000000000000000000000003014608060405260043610603d5760003560e01c80633612510b146042578063671da2fc14605c575b600080fd5b604a6102bc81565b60405190815260200160405180910390f35b604a6103208156fea2646970667358221220831ad1546e8fde9ea48ba13702dd99dbd1f5c2087898989158b2166c59762e9d64736f6c63430008140033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

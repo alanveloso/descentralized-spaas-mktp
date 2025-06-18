@@ -2,12 +2,13 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 import "./SpectrumToken.sol";
 import "./SpectrumTokenManager.sol";
 import "./SpectrumProviderManager.sol";
 import "./SpectrumRentalManager.sol";
 
-contract SpectrumMarketplace is IERC1155Receiver, ERC165, Ownable(msg.sender) {
+contract SpectrumMarketplace is IERC1155Receiver, ERC165, Ownable(msg.sender), Pausable {
     SpectrumToken public spectrumToken;
     SpectrumTokenManager public tokenManager;
     SpectrumProviderManager public providerManager;
@@ -24,6 +25,11 @@ contract SpectrumMarketplace is IERC1155Receiver, ERC165, Ownable(msg.sender) {
         address _providerManager,
         address _rentalManager
     ) {
+        require(_spectrumToken != address(0), "Invalid spectrum token address");
+        require(_tokenManager != address(0), "Invalid token manager address");
+        require(_providerManager != address(0), "Invalid provider manager address");
+        require(_rentalManager != address(0), "Invalid rental manager address");
+        
         spectrumToken = SpectrumToken(_spectrumToken);
         tokenManager = SpectrumTokenManager(_tokenManager);
         providerManager = SpectrumProviderManager(_providerManager);
@@ -33,7 +39,7 @@ contract SpectrumMarketplace is IERC1155Receiver, ERC165, Ownable(msg.sender) {
     /**
      * @dev Provedores listam espectro com uma quantidade específica e taxa.
      */
-    function listSpectrum(uint256 spectrumId, uint256 amount, uint256 ratePerHour) external {
+    function listSpectrum(uint256 spectrumId, uint256 amount, uint256 ratePerHour) external whenNotPaused {
         require(amount > 0, "Amount must be greater than zero");
         require(ratePerHour > 0, "Rate per hour must be greater than zero");
 
@@ -72,7 +78,7 @@ contract SpectrumMarketplace is IERC1155Receiver, ERC165, Ownable(msg.sender) {
         uint256[] calldata spectrumIds,
         uint256[] calldata amounts,
         uint256 balance
-    ) external payable {
+    ) external payable whenNotPaused {
         require(msg.value == balance, "Incorrect balance sent");
 
         // Aluguel é gerenciado pelo rentalManager
@@ -81,46 +87,57 @@ contract SpectrumMarketplace is IERC1155Receiver, ERC165, Ownable(msg.sender) {
         emit SpectrumRented(msg.sender, spectrumIds, amounts, balance);
     }
 
-/**
- * @dev Função para devolução do espectro.
- */
-function returnSpectrum(uint256[] calldata spectrumIds, uint256[] calldata amounts) external {
+    /**
+     * @dev Função para devolução do espectro.
+     */
+    function returnSpectrum(uint256[] calldata spectrumIds, uint256[] calldata amounts) external whenNotPaused {
+        // Verifica se o tenant aprovou o marketplace para transferir tokens em seu nome.
+        require(
+            spectrumToken.isApprovedForAll(msg.sender, address(this)),
+            "Marketplace not approved"
+        );
 
-    // Verifica se o provedor aprovou o marketplace para transferir tokens em seu nome.
-    require(
-        spectrumToken.isApprovedForAll(msg.sender, address(this)),
-        "Marketplace not approved"
-    );
+        // 1. Transfere os tokens do tenant para este contrato (Marketplace).
+        for (uint256 i = 0; i < spectrumIds.length; i++) {
+            uint256 spectrumId = spectrumIds[i];
+            uint256 amount = amounts[i];
+            spectrumToken.safeTransferFrom(msg.sender, address(this), spectrumId, amount, "");
+        }
 
-    // 1. Transfere os tokens do provedor para este contrato (Marketplace).
-    // Aqui, você transfere os tokens de volta para o Marketplace
-    for (uint256 i = 0; i < spectrumIds.length; i++) {
-        uint256 spectrumId = spectrumIds[i];
-        uint256 amount = amounts[i];
+        // 2. Marketplace transfere os tokens para o TokenManager
+        spectrumToken.setApprovalForAll(address(tokenManager), true);
+        spectrumToken.safeBatchTransferFrom(address(this), address(tokenManager), spectrumIds, amounts, "");
 
-        // Realiza a transferência de tokens do provedor para o contrato Marketplace
-        spectrumToken.safeTransferFrom(msg.sender, address(this), spectrumId, amount, "");
+        // 3. Atualiza o estado de aluguel
+        rentalManager.returnSpectrum(msg.sender, spectrumIds, amounts);
+
+        emit SpectrumReturned(msg.sender, spectrumIds, amounts);
     }
-
-    // O contrato principal (Marketplace) chama o rentalManager para devolver o espectro.
-    rentalManager.returnSpectrum(msg.sender, spectrumIds, amounts);
-
-    // 3. Emite um evento para registrar a devolução
-    emit SpectrumReturned(msg.sender, spectrumIds, amounts);
-}
-
 
     /**
      * @dev Expansão do aluguel atual com mais espectro.
      */
-    function expandRental(uint256[] calldata spectrumIds, uint256[] calldata amounts) external {
+    function expandRental(uint256[] calldata spectrumIds, uint256[] calldata amounts) external whenNotPaused {
         rentalManager.expandRental(msg.sender, spectrumIds, amounts);
 
         emit RentalExpanded(msg.sender, spectrumIds, amounts);
     }
 
+    /**
+     * @dev Pausa o contrato em caso de emergência
+     */
+    function pause() external onlyOwner {
+        _pause();
+    }
 
-        // Função para receber transferências de tokens ERC1155
+    /**
+     * @dev Despausa o contrato
+     */
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
+    // Função para receber transferências de tokens ERC1155
     function onERC1155Received(
         address /* operator */,
         address /* from */,

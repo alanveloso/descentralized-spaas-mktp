@@ -112,11 +112,15 @@ contract SpectrumRentalManager is Ownable(msg.sender) {
                 rental.spectrumAmounts[spectrumId] += allocation;
                 rental.providersForSpectrum[spectrumId].push(provider);
 
-                totalRatePerSecond += (providerRate * allocation);
+                // Convert rate from per hour to per second
+                totalRatePerSecond += (providerRate * allocation) / 3600;
                 amountAllocated += allocation;
             }
         }
 
+        // Prevent division by zero
+        require(totalRatePerSecond > 0, "No valid providers found");
+        
         uint256 totalRentalTime = balance / totalRatePerSecond;
         rental.tenant = tenant;
         rental.timeAllocated = totalRentalTime;
@@ -175,7 +179,8 @@ contract SpectrumRentalManager is Ownable(msg.sender) {
                     ? remainingAmount
                     : rental.spectrumAmounts[spectrumId];
 
-                ratePerSecondReduction += (providerRate * providerAmount);
+                // Convert rate from per hour to per second to prevent overflow
+                ratePerSecondReduction += (providerRate * providerAmount) / 3600;
 
                 remainingAmount -= providerAmount;
             }
@@ -225,8 +230,8 @@ contract SpectrumRentalManager is Ownable(msg.sender) {
 
                 uint256 amountFromProvider = additionalAmountNeeded -
                     amountAllocated;
-                uint256 costPerSecond = (providerRate * amountFromProvider) /
-                    3600;
+                // Convert rate from per hour to per second
+                uint256 costPerSecond = (providerRate * amountFromProvider) / 3600;
 
                 // Atualizar alocação de espectro e custo do aluguel
                 rental.spectrumAmounts[spectrumId] += amountFromProvider;
@@ -255,7 +260,9 @@ contract SpectrumRentalManager is Ownable(msg.sender) {
             return;
         }
 
-        uint256 remainingTime = address(this).balance / rental.ratePerSecond;
+        // Use tenant's balance instead of contract balance
+        uint256 tenantBalance = address(tenant).balance;
+        uint256 remainingTime = tenantBalance / rental.ratePerSecond;
         rental.endTime = block.timestamp + remainingTime;
         rental.timeAllocated =
             (block.timestamp - rental.startTime) +

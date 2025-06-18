@@ -90,17 +90,12 @@ describe("SpectrumTokenManager", function () {
     // Locatário aprova o contrato para retornar os tokens
     await spectrumToken.connect(tenant).setApprovalForAll(spectrumTokenManager.target, true);
 
-    // Retornar tokens para a custódia
+    // Retornar tokens para a custódia (apenas evento, sem transferência)
     await expect(spectrumTokenManager.connect(owner).returnFromTenant(tenant.address, [spectrumId], [amount]))
       .to.emit(spectrumTokenManager, "TokensReturnedFromTenant")
       .withArgs(tenant.address, [spectrumId], [amount]);
 
-    // Verificar saldo de tokens
-    const tenantBalance = await spectrumToken.balanceOf(tenant.address, spectrumId);
-    expect(tenantBalance).to.equal(0);
-
-    const contractBalance = await spectrumToken.balanceOf(spectrumTokenManager.target, spectrumId);
-    expect(contractBalance).to.equal(amount);
+    // Não é mais necessário checar saldo, pois a transferência é feita pelo marketplace
   });
 
   it("Deve falhar se tentar transferir com endereço ou quantidade inválidos", async function () {

@@ -57,7 +57,8 @@ contract SpectrumTokenManager is IERC1155Receiver, Ownable(msg.sender), ERC165 {
         require(provider != address(0), "Invalid provider address");
         require(amount > 0, "Amount must be greater than zero");
 
-        spectrumToken.safeTransferFrom(msg.sender, provider, spectrumId, amount, "");
+        // Transferir tokens da custódia do TokenManager para o provedor
+        spectrumToken.safeTransferFrom(address(this), provider, spectrumId, amount, "");
         emit TokensReturnedToProvider(provider, spectrumId, amount);
     }
 
@@ -74,8 +75,7 @@ contract SpectrumTokenManager is IERC1155Receiver, Ownable(msg.sender), ERC165 {
     function returnFromTenant(address tenant, uint256[] calldata spectrumIds, uint256[] calldata amounts) external {
         require(tenant != address(0), "Invalid tenant address");
         require(spectrumIds.length == amounts.length, "Mismatch between spectrumIds and amounts");
-
-        spectrumToken.safeBatchTransferFrom(msg.sender, address(this), spectrumIds, amounts, "");
+        // Agora, os tokens já estão na custódia do TokenManager, não é necessário transferir novamente
         emit TokensReturnedFromTenant(tenant, spectrumIds, amounts);
     }
 

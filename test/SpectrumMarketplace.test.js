@@ -89,8 +89,11 @@ describe("SpectrumMarketplace", function () {
     await marketplace.connect(provider).listSpectrum(1, 50, ethers.parseEther("0.01"));
     const rentalBalance = ethers.parseEther("1.0");
     await marketplace.connect(tenant).rentSpectrum([1], [10], rentalBalance, { value: rentalBalance });
+    
+    // Tenant needs to approve both marketplace and tokenManager to transfer tokens back
+    await spectrumToken.connect(tenant).setApprovalForAll(marketplace.target, true);
     await spectrumToken.connect(tenant).setApprovalForAll(spectrumTokenManager.target, true);
-
+    
     await marketplace.connect(tenant).returnSpectrum([1], [10]);
 
     const rental = await rentalManager.activeRentals(tenant.address);
@@ -105,8 +108,11 @@ describe("SpectrumMarketplace", function () {
     const rentalBalance = ethers.parseEther("1.0");
 
     await marketplace.connect(tenant).rentSpectrum([1], [10], rentalBalance, { value: rentalBalance });
+    
+    // Tenant needs to approve both marketplace and tokenManager to transfer tokens back
+    await spectrumToken.connect(tenant).setApprovalForAll(marketplace.target, true);
     await spectrumToken.connect(tenant).setApprovalForAll(spectrumTokenManager.target, true);
-
+    
     await marketplace.connect(tenant).returnSpectrum([1], [5]);
 
     const remainingAmount = await rentalManager.getSpectrumAmount(tenant.address, 1);
@@ -147,6 +153,9 @@ describe("SpectrumMarketplace", function () {
     const rentalBalance = ethers.parseEther("1.0");
 
     await marketplace.connect(tenant).rentSpectrum([1], [10], rentalBalance, { value: rentalBalance });
+    
+    // Tenant needs to approve both marketplace and tokenManager to transfer tokens back
+    await spectrumToken.connect(tenant).setApprovalForAll(marketplace.target, true);
     await spectrumToken.connect(tenant).setApprovalForAll(spectrumTokenManager.target, true);
 
     await expect(marketplace.connect(tenant).returnSpectrum([1], [10]))
